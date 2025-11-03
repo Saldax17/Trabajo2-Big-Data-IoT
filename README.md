@@ -1,76 +1,81 @@
-⚙️ Instrucciones de ejecución
-🔹 Opción 1 – Ejecución en AWS EMR
+# 🌎 Proyecto 2 – Arquitectura Batch Big Data en AWS (EAFIT 2025-2)
 
-Subir el notebook Trabajo #2 - Big Data Definitivo.ipynb a EMR Notebook o Zeppelin.
+**Autor:** Santiago Saldarriaga Saldarriaga  
+**Curso:** SI7006 / SI6003 – Almacenamiento y Procesamiento de Grandes Datos  
+**Fecha de entrega:** 31 de octubre de 2025  
 
-Ajustar rutas del bucket S3 (raw, trusted, refined).
+---
 
-Ejecutar todas las celdas del flujo ETL y modelo ML.
+## 🧠 Descripción general
 
-🔹 Opción 2 – Ejecución en Google Colab
+Este proyecto implementa una **solución analítica batch** en la nube para el monitoreo de la calidad del aire en espacios interiores (por ejemplo, parqueaderos o túneles).  
+El objetivo principal es transformar datos históricos de sensores IoT en **conocimiento útil**, aplicando análisis exploratorio y modelos de aprendizaje automático sobre un **Data Lake en AWS S3**.
 
-Subir el notebook Trabajo_2_colab_pyspark_Definitivo.ipynb a Colab.
+---
 
-Insertar las credenciales AWS IAM (Access Key y Secret Key).
+## 🏗️ Arquitectura general
 
-Ejecutar las celdas de configuración e instalación de Spark.
+La solución se diseñó siguiendo el flujo **Batch Architecture**, con separación por zonas en el Data Lake y herramientas de AWS:
 
-Confirmar la conexión (✅ SparkSession creada con soporte S3A).
+1. **Ingesta:**  
+   Carga del dataset *IoT Indoor Air Quality* desde Kaggle hacia la zona `raw/` del bucket S3 `ssaldarridatalake2`.
 
-Leer los archivos Parquet desde S3 y realizar el análisis visual.
+2. **Almacenamiento:**  
+   Creación de un **Data Lake** con las zonas:
+   - `raw/` → Datos originales sin procesar.  
+   - `trusted/` → Datos limpios y transformados.  
+   - `refined/` → Resultados finales del análisis y modelo ML.
 
-📊 Visualización y análisis final
+3. **Preparación:**  
+   Limpieza, transformación y normalización de los datos con **PySpark** ejecutado en **AWS EMR** o **Google Colab**, generando salidas optimizadas en formato **Parquet**.
 
-La visualización se realiza sobre los datos refinados (iot_summary) para identificar patrones en las variables ambientales:
+4. **Catalogación:**  
+   Uso de **AWS Glue Crawler** para registrar los datasets en la base `proyecto1db` y habilitar consultas con **Amazon Athena** y **SparkSQL**.
 
-import matplotlib.pyplot as plt
-df_s3.toPandas().groupby("hour")["CO2"].mean().plot(kind="line", figsize=(8,4))
-plt.title("Concentración promedio de CO₂ por hora del día")
-plt.xlabel("Hora")
-plt.ylabel("CO₂ (ppm)")
-plt.grid(True)
-plt.show()
+5. **Análisis Exploratorio (EDA):**  
+   Cálculo de métricas ambientales (promedios, máximos, desviaciones) por hora y por estado de ventilación, almacenadas en  
+   `s3://ssaldarridatalake2/proyecto1/refined/iot_summary/`.
 
+6. **Modelado Predictivo:**  
+   Entrenamiento de un modelo **Random Forest Classifier** con **SparkML** para predecir el estado de ventilación (`ventilation_status`) en función de variables ambientales.  
+   Resultados almacenados en `s3://ssaldarridatalake2/proyecto1/refined/iot_predictions/`.
 
-Ejemplo de resultados esperados:
+---
 
-Tendencia horaria del CO₂.
+## ☁️ Componentes AWS utilizados
 
-Correlación entre temperatura y ventilación.
+| Servicio | Funcionalidad |
+|-----------|----------------|
+| **Amazon S3** | Data Lake con zonas `raw`, `trusted` y `refined`. |
+| **Amazon EMR** | Ejecución distribuida de PySpark y entrenamiento del modelo ML. |
+| **AWS Glue** | Descubrimiento y catalogación automática de los datos procesados. |
+| **Amazon Athena** | Consulta SQL sobre datos en formato Parquet. |
+| **IAM** | Gestión de credenciales seguras para acceso desde EMR y Colab. |
 
-Distribución de humedad según estado de ventilación.
+---
 
-📂 Estructura del repositorio
-├── README.md
-├── si7006-252-trabajo2-Santiago-Saldarriaga-Saldarriaga.pdf
-├── Trabajo #2 - Big Data Definitivo.ipynb          # Notebook usado en EMR
-├── Trabajo_2_colab_pyspark_Definitivo.ipynb        # Notebook con conexión S3A desde Colab
-├── /scripts/                                       # Scripts PySpark o SQL adicionales
-└── /data/                                          # Ejemplos o muestras de datos (si aplica)
+## 💻 Implementación en Google Colab
 
-📈 Resultados destacados
+En Colab se configuró un entorno **PySpark** con acceso directo a **S3** mediante el conector `s3a://`.  
+Este entorno permitió realizar análisis exploratorio, modelado y visualización directamente desde la nube.
 
-Implementación completa del flujo Batch Big Data en AWS.
+### 🔧 Configuración resumida de la conexión
+```python
+from pyspark.sql import SparkSession
+import os
 
-Conexión validada entre PySpark (Colab) y AWS S3.
+os.environ["AWS_ACCESS_KEY_ID"] = "TU_ACCESS_KEY"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "TU_SECRET_KEY"
+os.environ["AWS_REGION"] = "us-west-1"
 
-Modelo de Random Forest entrenado y almacenado en la zona refined.
-
-Visualizaciones de comportamiento ambiental basadas en datos reales.
-
-Integración exitosa entre S3, EMR, Glue, Athena y Colab.
-
-🧾 Conclusiones
-
-El proyecto demuestra el ciclo completo de procesamiento batch en AWS, integrando componentes analíticos y de almacenamiento a gran escala.
-El uso de PySpark tanto en EMR como en Colab facilita la experimentación y análisis, mientras que el Data Lake asegura escalabilidad y trazabilidad del proceso.
-
-🤝 Créditos
-
-Proyecto desarrollado por Santiago Saldarriaga Saldarriaga
-como parte del curso Almacenamiento y Procesamiento de Grandes Datos – Universidad EAFIT (2025-2).
-
-📜 Licencia
-
-Este proyecto se distribuye con fines académicos bajo la licencia MIT.
-
+spark = (
+    SparkSession.builder
+    .appName("S3Connection")
+    .master("local[*]")
+    .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+    .config("spark.hadoop.fs.s3a.aws.credentials.provider",
+            "com.amazonaws.auth.EnvironmentVariableCredentialsProvider")
+    .config("spark.hadoop.fs.s3a.endpoint", "s3.us-west-1.amazonaws.com")
+    .config("spark.hadoop.fs.s3a.path.style.access", "true")
+    .getOrCreate()
+)
