@@ -1,74 +1,76 @@
-# 🌎 Proyecto 2 – Arquitectura Batch Big Data en AWS (EAFIT 2025-2)
+⚙️ Instrucciones de ejecución
+🔹 Opción 1 – Ejecución en AWS EMR
 
-**Autor:** Santiago Saldarriaga Saldarriaga  
-**Curso:** SI7006 / SI6003 – Almacenamiento y Procesamiento de Grandes Datos  
-**Fecha de entrega:** 31 de octubre de 2025  
+Subir el notebook Trabajo #2 - Big Data Definitivo.ipynb a EMR Notebook o Zeppelin.
 
----
+Ajustar rutas del bucket S3 (raw, trusted, refined).
 
-## 🧠 Descripción general
+Ejecutar todas las celdas del flujo ETL y modelo ML.
 
-Este proyecto implementa una **solución analítica batch** en la nube para el monitoreo de la calidad del aire en espacios interiores (como parqueaderos o túneles).  
-El objetivo es transformar datos históricos en **conocimiento útil**, aplicando análisis exploratorio y modelos de aprendizaje automático sobre un **Data Lake en AWS S3**.
+🔹 Opción 2 – Ejecución en Google Colab
 
----
+Subir el notebook Trabajo_2_colab_pyspark_Definitivo.ipynb a Colab.
 
-## 🏗️ Arquitectura general
+Insertar las credenciales AWS IAM (Access Key y Secret Key).
 
-La solución sigue un **ciclo de vida Batch clásico**, estructurado en seis fases:
+Ejecutar las celdas de configuración e instalación de Spark.
 
-1. **Ingesta:**  
-   Carga del dataset *IoT Indoor Air Quality* desde Kaggle hacia la zona `raw/` del bucket S3 `ssaldarridatalake2`.
+Confirmar la conexión (✅ SparkSession creada con soporte S3A).
 
-2. **Almacenamiento:**  
-   Creación de un **Data Lake** en S3 con zonas:
-   - `raw/` – Datos originales.  
-   - `trusted/` – Datos limpios y transformados.  
-   - `refined/` – Resultados del EDA y predicciones del modelo.
+Leer los archivos Parquet desde S3 y realizar el análisis visual.
 
-3. **Preparación:**  
-   Limpieza, transformación y normalización de los datos mediante **PySpark** en **AWS EMR** o **Google Colab**, generando salidas optimizadas en formato **Parquet**.
+📊 Visualización y análisis final
 
-4. **Catalogación:**  
-   Uso de **AWS Glue Crawler** para registrar los datasets procesados dentro de la base `proyecto1db`, habilitando consultas en **Amazon Athena** y **SparkSQL**.
+La visualización se realiza sobre los datos refinados (iot_summary) para identificar patrones en las variables ambientales:
 
-5. **Análisis exploratorio (EDA):**  
-   Cálculo de métricas por `ventilation_status`, promedios de temperatura, humedad y CO₂, máximos de PM2.5 y desviaciones estándar, almacenadas en  
-   `s3://ssaldarridatalake2/proyecto1/refined/iot_summary/`.
+import matplotlib.pyplot as plt
+df_s3.toPandas().groupby("hour")["CO2"].mean().plot(kind="line", figsize=(8,4))
+plt.title("Concentración promedio de CO₂ por hora del día")
+plt.xlabel("Hora")
+plt.ylabel("CO₂ (ppm)")
+plt.grid(True)
+plt.show()
 
-6. **Modelado predictivo:**  
-   Entrenamiento de un **Random Forest Classifier** de **SparkML** para predecir el estado de ventilación (`On/Off`) a partir de variables ambientales.  
-   Resultados guardados en `s3://ssaldarridatalake2/proyecto1/refined/iot_predictions/`.
 
----
+Ejemplo de resultados esperados:
 
-## ☁️ Componentes AWS utilizados
+Tendencia horaria del CO₂.
 
-| Servicio | Rol principal |
-|-----------|----------------|
-| **S3** | Almacenamiento del Data Lake (`raw`, `trusted`, `refined`). |
-| **EMR** | Procesamiento distribuido con PySpark y ejecución del modelo ML. |
-| **Glue** | Catalogación automática y definición del esquema de datos. |
-| **Athena** | Consulta SQL directa sobre los datos catalogados. |
-| **IAM** | Control de accesos y credenciales seguras para EMR / Colab. |
+Correlación entre temperatura y ventilación.
 
----
+Distribución de humedad según estado de ventilación.
 
-## 💻 Implementación en Google Colab
+📂 Estructura del repositorio
+├── README.md
+├── si7006-252-trabajo2-Santiago-Saldarriaga-Saldarriaga.pdf
+├── Trabajo #2 - Big Data Definitivo.ipynb          # Notebook usado en EMR
+├── Trabajo_2_colab_pyspark_Definitivo.ipynb        # Notebook con conexión S3A desde Colab
+├── /scripts/                                       # Scripts PySpark o SQL adicionales
+└── /data/                                          # Ejemplos o muestras de datos (si aplica)
 
-Se configuró un entorno PySpark en Colab para:
+📈 Resultados destacados
 
-- Conectarse a **S3** mediante `fs.s3a` y credenciales IAM.  
-- Leer los datos Parquet desde la zona `refined/`.  
-- Ejecutar nuevamente el EDA y el modelo ML.  
-- Visualizar resultados mediante `matplotlib` y `seaborn`.
+Implementación completa del flujo Batch Big Data en AWS.
 
-Ejemplo de conexión:
+Conexión validada entre PySpark (Colab) y AWS S3.
 
-```python
-from pyspark.sql import SparkSession
-spark = (SparkSession.builder
-         .appName("S3Connection")
-         .master("local[*]")
-         .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-         .getOrCreate())
+Modelo de Random Forest entrenado y almacenado en la zona refined.
+
+Visualizaciones de comportamiento ambiental basadas en datos reales.
+
+Integración exitosa entre S3, EMR, Glue, Athena y Colab.
+
+🧾 Conclusiones
+
+El proyecto demuestra el ciclo completo de procesamiento batch en AWS, integrando componentes analíticos y de almacenamiento a gran escala.
+El uso de PySpark tanto en EMR como en Colab facilita la experimentación y análisis, mientras que el Data Lake asegura escalabilidad y trazabilidad del proceso.
+
+🤝 Créditos
+
+Proyecto desarrollado por Santiago Saldarriaga Saldarriaga
+como parte del curso Almacenamiento y Procesamiento de Grandes Datos – Universidad EAFIT (2025-2).
+
+📜 Licencia
+
+Este proyecto se distribuye con fines académicos bajo la licencia MIT.
+
